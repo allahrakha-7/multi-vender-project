@@ -26,6 +26,7 @@
     "endpoint": "^0.4.5",
     "firebase": "^12.0.0",
     "leaflet": "^1.9.4",
+    "lucide-react": "^1.23.0",
     "p5": "^2.0.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

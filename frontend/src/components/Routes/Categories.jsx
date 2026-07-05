@@ -1,4 +1,8 @@
+import { useNavigate } from "react-router-dom";
+
 function Categories() {
+  const navigate = useNavigate();
+
   const brandingData = [
     {
       id: 1,
@@ -80,7 +84,7 @@ function Categories() {
     },
     {
       id: 4,
-      title: "Affortable Prices",
+      title: "Affordable Prices",
       Description: "Get Factory direct price",
       icon: (
         <svg
@@ -162,20 +166,90 @@ function Categories() {
       ),
     },
   ];
-      
+
+  const categoryData = [
+    {
+      id: 1,
+      title: "Furniture",
+      image: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=400&q=80",
+    },
+    {
+      id: 2,
+      title: "Hand Bag",
+      image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=400&q=80",
+    },
+    {
+      id: 3,
+      title: "Books",
+      image: "https://images-na.ssl-images-amazon.com/images/I/71g2ednj0JL.jpg",
+    },
+    {
+      id: 4,
+      title: "Tech",
+      image: "https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=400&q=80",
+    },
+    {
+      id: 5,
+      title: "Sneakers",
+      image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=400&q=80",
+    },
+    {
+      id: 6,
+      title: "Travel",
+      image: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=400&q=80",
+    },
+  ];
+
+  const handleCategorySelect = (categoryTitle) => {
+    navigate(`/products?search=${encodeURIComponent(categoryTitle)}`);
+  };
+
   return (
-     <>
-      <div className="w-full mx-auto hidden sm:block shadow-xs">
+    <>
+      {/* Top Categories Section */}
+      <div className="w-full max-w-7xl mx-auto px-4 lg:px-8 py-8 sm:py-12">
+        <h2 className="text-xl sm:text-2xl font-bold text-[#003d29] mb-6 sm:mb-8 text-center sm:text-left">
+          Shop Our Top Categories
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
+          {categoryData.map((category) => (
+            <div
+              key={category.id}
+              className="group relative overflow-hidden rounded-2xl h-52 sm:h-60 flex flex-col items-center justify-start pt-6 cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-300"
+              onClick={() => handleCategorySelect(category.title)}
+            >
+              {/* Image as background */}
+              <img
+                src={category.image}
+                alt={category.title}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              />
+              {/* Semi-transparent Overlay */}
+              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300" />
+              
+              {/* White Text on top of Image */}
+              <span className="relative text-white font-bold text-base sm:text-lg tracking-wide z-10 text-center px-3 select-none">
+                {category.title}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Branding bar (hidden on mobile) */}
+      <div className="w-full max-w-7xl mx-auto hidden sm:block px-4 lg:px-8 mb-8 sm:mb-12">
         <div
-          className={`branding my-1.5 flex justify-between w-full bg-white px-6 py-6 rounded-md`}
+          className="flex flex-wrap items-center justify-between gap-6 w-full bg-white p-6 rounded-xl border border-gray-100/80 shadow-sm"
         >
           {brandingData &&
             brandingData.map((i, index) => (
-              <div className="flex items-center" key={index}>
-                {i.icon}
-                <div className="px-6 py-6">
-                  <h3 className="font-bold text-sm md:text-base">{i.title}</h3>
-                  <p className="text-xs md:text-sm">{i.Description}</p>
+              <div className="flex items-center gap-4" key={index}>
+                <div className="shrink-0">
+                  {i.icon}
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm md:text-base text-gray-800 leading-tight">{i.title}</h3>
+                  <p className="text-xs md:text-sm text-gray-500 mt-1">{i.Description}</p>
                 </div>
               </div>
             ))}
@@ -183,6 +257,6 @@ function Categories() {
       </div>
     </>
   );
-};
+}
 
 export default Categories;

@@ -1,0 +1,13 @@
+{
+  "execMap": {
+    "js": "node"
+  },
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "ext": "js,json",
+  "ignore": ["node_modules", "frontend", "socket"],
+  "watch": ["backend"],
+  "verbose": true
+}
+

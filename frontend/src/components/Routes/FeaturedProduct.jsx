@@ -51,44 +51,39 @@ function FeaturedProduct() {
   };
 
   return (
-    <section className="w-full bg-gradient-to-b from-white to-indigo-50/40">
-      <div className="w-11/12 mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-[27px] mt-2 md:text-[32px] font-[700] font-Roboto relative">
+    <section className="w-full bg-white py-8 sm:py-10">
+      <div className="w-full max-w-7xl mx-auto px-4 lg:px-8">
+        <div className="flex items-center justify-between mb-6 sm:mb-8">
+          <h2 className="text-xl sm:text-2xl font-bold text-[#003d29]">
             Featured Products
-            <span className="absolute -bottom-2 left-0 h-[3px] w-10 rounded-full bg-yellow-500/80" />
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 xl:gap-7 mb-12 relative">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 xl:gap-8 mb-6 relative">
           {loading ? (
-            <p className="col-span-full text-center text-gray-400">Loading products...</p>
+            <p className="col-span-full text-center text-gray-400 py-10">Loading products...</p>
           ) : featuredProducts && featuredProducts.length > 0 ? (
             featuredProducts.map((item, idx) => (
-              <div
-                key={idx}
-                className="group rounded-xl bg-white border border-transparent hover:border-indigo-100 hover:shadow-lg transition-all duration-200"
-              >
-                <ProductCard data={item} />
-              </div>
+              <ProductCard key={idx} data={item} />
             ))
           ) : (
-            <p className="col-span-full text-center text-gray-400">No products found</p>
+            <p className="col-span-full text-center text-gray-400 py-10">No products found</p>
           )}
 
           {hasExcess && (
             <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-white via-white/80 to-transparent blur-sm pointer-events-none" />
           )}
-          {hasExcess && (
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
-              <Link to="/products" onClick={handleOnClick}>
-                <button className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-700 transition">
-                  explore more...
-                </button>
-              </Link>
-            </div>
-          )}
         </div>
+
+        {hasExcess && (
+          <div className="flex justify-center mt-6">
+            <Link to="/products" onClick={handleOnClick}>
+              <button className="bg-[#003d29] hover:bg-[#002e1f] text-white font-semibold py-2 px-6 rounded-full transition-all duration-300 shadow-sm text-sm cursor-pointer">
+                Explore More
+              </button>
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );
