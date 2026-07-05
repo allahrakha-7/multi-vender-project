@@ -15,7 +15,7 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-  origin: "http://localhost:5173", 
+  origin: "http://localhost:5173",
   credentials: true,
 }));
 
@@ -31,11 +31,11 @@ process.on("uncaughtException", (err) => {
 
 
 mongoose.connect(process.env.MONGO)
-.then(() => console.log('Connected to MongoDB!'))
-.catch((err) => {
-  console.log('MongoDB connection error:', err);
-  process.exit(1);
-});
+  .then(() => console.log('Connected to MongoDB!'))
+  .catch((err) => {
+    console.log('MongoDB connection error:', err);
+    process.exit(1);
+  });
 
 
 app.use(express.json());

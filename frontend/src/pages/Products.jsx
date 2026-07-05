@@ -1,25 +1,57 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { ChevronDown, SlidersHorizontal, ChevronRight } from "lucide-react";
 import {
   fetchOtherUsersProductsStart,
   fetchOtherUsersProductsSuccess,
   fetchOtherUsersProductsFailure,
 } from "../redux/reducers/productSlice";
 import ProductCard from "../components/ProductCard";
-import { IoArrowBack } from "react-icons/io5";
-import { useNavigate } from "react-router-dom";
-import { FaSearch } from "react-icons/fa";
-import { MdOutlineShoppingCart } from "react-icons/md";
-import { AiOutlineShoppingCart } from "react-icons/ai";
+import Header from "../components/Layout/Header";
+import Footer from "../components/Layout/Footer";
+
+const PRODUCTS_PER_PAGE = 8;
 
 function ProductsPage() {
   const { products, loading } = useSelector((state) => state.product);
   const { currentUser } = useSelector((state) => state.user);
-  const { cart } = useSelector((state) => state.cart);
   const dispatch = useDispatch();
+  
+  // Search state
   const [searchTerm, setSearchTerm] = useState("");
-  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Filter States
+  const [sortType, setSortType] = useState("default");
+  const [selectedPriceRange, setSelectedPriceRange] = useState(null);
+  const [selectedRating, setSelectedRating] = useState(null);
+  const [selectedType, setSelectedType] = useState(null);
+  const [selectedColor, setSelectedColor] = useState(null);
+  const [activeDropdown, setActiveDropdown] = useState(null);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Sync search term with URL search parameter
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    setSearchTerm(params.get("search") || "");
+  }, [location.search]);
+
+  // Reset pagination to page 1 whenever any filter or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedPriceRange, selectedRating, selectedType, selectedColor, sortType]);
+
+  // Click outside to close active filter dropdowns
+  useEffect(() => {
+    const handleOutsideClick = () => {
+      setActiveDropdown(null);
+    };
+    window.addEventListener("click", handleOutsideClick);
+    return () => window.removeEventListener("click", handleOutsideClick);
+  }, []);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -40,111 +72,420 @@ function ProductsPage() {
     fetchProducts();
   }, [dispatch]);
 
-  const goBack = () => {
-    navigate('/');
+  // Clear all filters
+  const handleClearFilters = () => {
+    setSelectedPriceRange(null);
+    setSelectedRating(null);
+    setSelectedType(null);
+    setSelectedColor(null);
+    setSortType("default");
+    setActiveDropdown(null);
   };
 
+  // Perform dynamic filtering and sorting in real-time
   const filteredProducts = products
-    ?.filter((item) => item.seller !== currentUser._id)
+    ?.filter((item) => !currentUser || item.seller !== currentUser._id)
     .filter((item) => {
+      // 1. Search term filter
       const matchesSearch = !searchTerm ||
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.tags && item.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())));
-      return matchesSearch;
+
+      // 2. Price filter
+      let matchesPrice = true;
+      if (selectedPriceRange) {
+        const price = item.discountPrice || item.originalPrice || 0;
+        matchesPrice = price >= selectedPriceRange[0] && price <= selectedPriceRange[1];
+      }
+
+      // 3. Rating filter
+      let matchesRating = true;
+      if (selectedRating) {
+        matchesRating = (item.ratings || 0) >= selectedRating;
+      }
+
+      // 4. Product Type filter
+      let matchesType = true;
+      if (selectedType) {
+        matchesType = item.category?.toLowerCase() === selectedType.toLowerCase() ||
+                      (item.tags && item.tags.some(tag => tag.toLowerCase() === selectedType.toLowerCase()));
+      }
+
+      // 5. Color filter
+      let matchesColor = true;
+      if (selectedColor) {
+        matchesColor = item.tags && item.tags.some(tag => tag.toLowerCase() === selectedColor.toLowerCase());
+      }
+
+      return matchesSearch && matchesPrice && matchesRating && matchesType && matchesColor;
+    })
+    .sort((a, b) => {
+      // Sort logic
+      if (sortType === "priceLowToHigh") {
+        return (a.discountPrice || 0) - (b.discountPrice || 0);
+      }
+      if (sortType === "priceHighToLow") {
+        return (b.discountPrice || 0) - (a.discountPrice || 0);
+      }
+      if (sortType === "topRated") {
+        return (b.ratings || 0) - (a.ratings || 0);
+      }
+      return 0;
     });
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-  };
+  // Pagination Calculations
+  const totalPages = Math.ceil((filteredProducts?.length || 0) / PRODUCTS_PER_PAGE) || 1;
+  const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+  const paginatedProducts = filteredProducts?.slice(startIndex, startIndex + PRODUCTS_PER_PAGE) || [];
+
+  const pageNumbers = [];
+  for (let i = 1; i <= totalPages; i++) {
+    pageNumbers.push(i);
+  }
+
+  // Dynamically change heading title based on active search
+  const headingTitle = searchTerm 
+    ? `${searchTerm.charAt(0).toUpperCase() + searchTerm.slice(1)} For You!` 
+    : "Products For You!";
 
   return (
-    <>
-      <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-sm px-2 py-3 bg-slate-50 shadow-md">
-        <div className="w-full h-full flex items-center justify-between gap-4 px-2 sm:px-4">
-          <div className="flex items-center gap-4 sm:gap-8 flex-1 min-w-0">
-            <Link to="/" className="shrink-0">
-              <div className="font-bold text-sm flex items-center">
-                <MdOutlineShoppingCart className="text-[32px] text-gray-700 font-extralight" />
-                <div className="flex flex-col ml-1">
-                  <span className="text-green-600 text-[28px] font-semibold font-[Georgia]">
-                    Vendify
-                  </span>
-                  <p className="text-[10px] text-gray-800 ml-2 uppercase italic">
-                    shop from home
-                  </p>
-                </div>
-              </div>
-            </Link>
+    <div className="min-h-screen bg-white">
+      {/* Universal Header */}
+      <Header />
 
-            <div className="hidden sm:flex flex-1 justify-center">
-              <form onSubmit={handleSearchSubmit} className="relative w-full max-w-md">
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="bg-white hover:border-gray-400 focus:border-gray-800 focus:outline-none w-full px-3 py-2 text-sm sm:text-base rounded-full border border-gray-300"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <button
-                  type="submit"
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
-                >
-                  <FaSearch className="text-gray-600 text-base max-lg:hidden" />
+      {/* Main Content Area */}
+      <main className="w-full bg-white pb-16 pt-20 md:pt-36">
+        
+        {/* Promotional Headphone Banner */}
+        <div className="w-full max-w-7xl mx-auto px-4 lg:px-8 mt-6">
+          <div className="relative rounded-3xl bg-[#f6f3ed] p-8 md:p-12 flex flex-col md:flex-row justify-between items-center overflow-hidden h-[240px] md:h-[280px]">
+            <div className="flex flex-col gap-4 text-left z-10 md:w-3/5">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#003d29] leading-tight capitalize">
+                Grab Upto 50% Off On Selected Headphone
+              </h1>
+              <div>
+                <button className="bg-[#003d29] hover:bg-[#002e1f] text-white font-semibold py-2.5 px-6 rounded-full transition-all duration-300 shadow-sm text-sm cursor-pointer">
+                  Buy Now
                 </button>
-              </form>
+              </div>
+            </div>
+            {/* Right side portrait image of model with headphones */}
+            <div className="absolute right-0 bottom-0 h-full w-full md:w-2/5 flex items-end justify-end pointer-events-none z-0">
+              <img
+                src="https://images.unsplash.com/photo-1487180142328-054b783fc471?auto=format&fit=crop&w=600&q=80"
+                alt="Promo Headphones Model"
+                className="h-[90%] md:h-[110%] object-contain object-bottom select-none mix-blend-multiply opacity-90"
+              />
             </div>
           </div>
+        </div>
 
-          <nav className="hidden sm:flex items-center space-x-6 md:space-x-10">
-            <Link to="/" className="text-gray-700 text-sm md:text-base">
-              Home
-            </Link>
-          </nav>
+        {/* Dynamic Filters Bar */}
+        <div className="w-full max-w-7xl mx-auto px-4 lg:px-8 mt-8 flex flex-wrap justify-between items-center gap-4">
+          <div className="flex flex-wrap gap-2 text-xs sm:text-sm text-gray-700">
+            
+            {/* Headphone / Product Type Filter */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveDropdown(activeDropdown === "type" ? null : "type");
+                }}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-medium transition cursor-pointer text-xs sm:text-sm ${
+                  selectedType ? "bg-[#003d29] text-white border border-[#003d29]" : "bg-[#f5f6f6] border border-transparent text-gray-700 hover:bg-[#eef0f0]"
+                }`}
+              >
+                {selectedType ? `Type: ${selectedType}` : "Product Type"} <ChevronDown size={14} />
+              </button>
+              {activeDropdown === "type" && (
+                <div 
+                  onClick={(e) => e.stopPropagation()} 
+                  className="absolute left-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg z-20 py-2"
+                >
+                  <button
+                    onClick={() => { setSelectedType(null); setActiveDropdown(null); }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-xs sm:text-sm text-gray-700 cursor-pointer"
+                  >
+                    All Types
+                  </button>
+                  {["Electronics", "Books", "Furniture", "Fashion", "Beauty"].map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => { setSelectedType(type); setActiveDropdown(null); }}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-50 text-xs sm:text-sm text-gray-700 cursor-pointer"
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-          <div className="flex items-center space-x-3 sm:space-x-4">
-            <Link to="/cart" className="relative cursor-pointer">
-              <AiOutlineShoppingCart size={24} />
-              <span className="absolute right-0 top-0 rounded-full bg-[#3bc177] w-3 h-3 text-white font-mono text-[10px] leading-tight text-center">
-                {cart.length}
-              </span>
-            </Link>
+            {/* Price Filter */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveDropdown(activeDropdown === "price" ? null : "price");
+                }}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-medium transition cursor-pointer text-xs sm:text-sm ${
+                  selectedPriceRange ? "bg-[#003d29] text-white border border-[#003d29]" : "bg-[#f5f6f6] border border-transparent text-gray-700 hover:bg-[#eef0f0]"
+                }`}
+              >
+                {selectedPriceRange ? `Price: $${selectedPriceRange[0]}-${selectedPriceRange[1] === 999999 ? "+" : selectedPriceRange[1]}` : "Price"} <ChevronDown size={14} />
+              </button>
+              {activeDropdown === "price" && (
+                <div 
+                  onClick={(e) => e.stopPropagation()} 
+                  className="absolute left-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg z-20 py-2"
+                >
+                  <button
+                    onClick={() => { setSelectedPriceRange(null); setActiveDropdown(null); }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-xs sm:text-sm text-gray-700 cursor-pointer"
+                  >
+                    All Prices
+                  </button>
+                  {[
+                    { label: "Under $50", val: [0, 50] },
+                    { label: "$50 to $100", val: [50, 100] },
+                    { label: "$100 to $200", val: [100, 200] },
+                    { label: "Over $200", val: [200, 999999] }
+                  ].map((range) => (
+                    <button
+                      key={range.label}
+                      onClick={() => { setSelectedPriceRange(range.val); setActiveDropdown(null); }}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-50 text-xs sm:text-sm text-gray-700 cursor-pointer"
+                    >
+                      {range.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Review Filter */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveDropdown(activeDropdown === "review" ? null : "review");
+                }}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-medium transition cursor-pointer text-xs sm:text-sm ${
+                  selectedRating ? "bg-[#003d29] text-white border border-[#003d29]" : "bg-[#f5f6f6] border border-transparent text-gray-700 hover:bg-[#eef0f0]"
+                }`}
+              >
+                {selectedRating ? `Rating: ${selectedRating}★+` : "Review"} <ChevronDown size={14} />
+              </button>
+              {activeDropdown === "review" && (
+                <div 
+                  onClick={(e) => e.stopPropagation()} 
+                  className="absolute left-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg z-20 py-2"
+                >
+                  <button
+                    onClick={() => { setSelectedRating(null); setActiveDropdown(null); }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-xs sm:text-sm text-gray-700 cursor-pointer"
+                  >
+                    All Ratings
+                  </button>
+                  {[4, 3, 2].map((stars) => (
+                    <button
+                      key={stars}
+                      onClick={() => { setSelectedRating(stars); setActiveDropdown(null); }}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-50 text-xs sm:text-sm text-gray-700 cursor-pointer"
+                    >
+                      {stars} Stars & Up
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Color Filter */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveDropdown(activeDropdown === "color" ? null : "color");
+                }}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-medium transition cursor-pointer text-xs sm:text-sm ${
+                  selectedColor ? "bg-[#003d29] text-white border border-[#003d29]" : "bg-[#f5f6f6] border border-transparent text-gray-700 hover:bg-[#eef0f0]"
+                }`}
+              >
+                {selectedColor ? `Color: ${selectedColor}` : "Color"} <ChevronDown size={14} />
+              </button>
+              {activeDropdown === "color" && (
+                <div 
+                  onClick={(e) => e.stopPropagation()} 
+                  className="absolute left-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg z-20 py-2"
+                >
+                  <button
+                    onClick={() => { setSelectedColor(null); setActiveDropdown(null); }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-xs sm:text-sm text-gray-700 cursor-pointer"
+                  >
+                    All Colors
+                  </button>
+                  {["Black", "Red", "Blue", "White", "Pink"].map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => { setSelectedColor(color); setActiveDropdown(null); }}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-50 text-xs sm:text-sm text-gray-700 cursor-pointer"
+                    >
+                      {color}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Clear All / All Filters Button */}
+            {(selectedPriceRange || selectedRating || selectedType || selectedColor || sortType !== "default") && (
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="flex items-center gap-1.5 bg-red-50 text-red-700 hover:bg-red-100 transition px-4 py-2 rounded-full font-medium text-xs sm:text-sm cursor-pointer"
+              >
+                Clear Filters <SlidersHorizontal size={14} />
+              </button>
+            )}
+          </div>
+          
+          {/* Sort Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveDropdown(activeDropdown === "sort" ? null : "sort");
+              }}
+              className="flex items-center gap-1.5 border border-gray-200 bg-white hover:bg-gray-50 transition px-4 py-2 rounded-full font-medium text-xs sm:text-sm cursor-pointer text-gray-700"
+            >
+              Sort by: {
+                sortType === "priceLowToHigh" ? "Price: Low to High" : 
+                sortType === "priceHighToLow" ? "Price: High to Low" : 
+                sortType === "topRated" ? "Top Rated" : 
+                "Default"
+              } <ChevronDown size={14} className="text-gray-500" />
+            </button>
+            {activeDropdown === "sort" && (
+              <div 
+                onClick={(e) => e.stopPropagation()} 
+                className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg z-20 py-2"
+              >
+                <button
+                  onClick={() => { setSortType("default"); setActiveDropdown(null); }}
+                  className="w-full text-left px-4 py-2 hover:bg-gray-50 text-xs sm:text-sm text-gray-700 cursor-pointer"
+                >
+                  Default
+                </button>
+                <button
+                  onClick={() => { setSortType("priceLowToHigh"); setActiveDropdown(null); }}
+                  className="w-full text-left px-4 py-2 hover:bg-gray-50 text-xs sm:text-sm text-gray-700 cursor-pointer"
+                >
+                  Price: Low to High
+                </button>
+                <button
+                  onClick={() => { setSortType("priceHighToLow"); setActiveDropdown(null); }}
+                  className="w-full text-left px-4 py-2 hover:bg-gray-50 text-xs sm:text-sm text-gray-700 cursor-pointer"
+                >
+                  Price: High to Low
+                </button>
+                <button
+                  onClick={() => { setSortType("topRated"); setActiveDropdown(null); }}
+                  className="w-full text-left px-4 py-2 hover:bg-gray-50 text-xs sm:text-sm text-gray-700 cursor-pointer"
+                >
+                  Top Rated
+                </button>
+              </div>
+            )}
+          </div>
+
+        </div>
+
+        {/* Dynamic Pagination Bar (Centered at the top of the grid) */}
+        {totalPages > 1 && (
+          <div className="w-full max-w-7xl mx-auto px-4 lg:px-8 mt-10 flex justify-center items-center gap-2">
+            {pageNumbers.map((num) => (
+              <button
+                key={num}
+                onClick={() => setCurrentPage(num)}
+                className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all cursor-pointer ${
+                  currentPage === num
+                    ? "bg-[#003d29] text-white"
+                    : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                {num}
+              </button>
+            ))}
+            {currentPage < totalPages && (
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                className="w-9 h-9 border border-gray-300 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-all cursor-pointer"
+              >
+                <ChevronRight size={16} />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Section Title */}
+        <div className="w-full max-w-7xl mx-auto px-4 lg:px-8 mt-8">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+            {headingTitle}
+          </h2>
+        </div>
+
+        {/* Product Grid */}
+        <div className="w-full max-w-7xl mx-auto px-4 lg:px-8 mt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {loading ? (
+              <p className="col-span-full text-center text-gray-400 py-12">Loading products...</p>
+            ) : paginatedProducts && paginatedProducts.length > 0 ? (
+              paginatedProducts.map((item, idx) => (
+                <ProductCard key={idx} data={item} />
+              ))
+            ) : (
+              <p className="col-span-full text-center text-red-500 py-12 font-medium">No products found matching filters</p>
+            )}
           </div>
         </div>
-      </header>
-      <div className="bg-gradient-to-b from-white to-indigo-50/30 pt-16">
-        <IoArrowBack
-          onClick={goBack}
-          className="text-2xl cursor-pointer absolute top-25 max-sm:top-21 max-sm:left-2 left-4 max-sm:text-xl font-semibold"
-        />
-        <div className="w-11/12 mx-auto py-6 ">
-          <h2 className="text-[27px] mt-3 md:text-[32px] font-[700] font-Roboto">
-            All Products
-          </h2>
-          <h3 className="text-[18px] md:text-[18px] font-[600] font-Roboto">
-            Search for more exciting products
-          </h3>
-        </div>
-        <div className="w-11/12 mx-auto">
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 max-sm:m-2 lg:grid-cols-4 gap-5 mx-2 md:gap-6 xl:gap-7">
-          {loading ? (
-            <p className="col-span-full text-center text-gray-400">Loading products...</p>
-          ) : filteredProducts && filteredProducts.length > 0 ? (
-            filteredProducts.map((item, idx) => (
-              <div
-                key={idx}
-                className="group rounded-xl bg-white border border-transparent hover:border-indigo-100 hover:shadow-lg transition-all duration-200"
+
+        {/* Dynamic Pagination Bar (Centered at the bottom of the grid as well for easy access) */}
+        {totalPages > 1 && (
+          <div className="w-full max-w-7xl mx-auto px-4 lg:px-8 mt-12 flex justify-center items-center gap-2">
+            {pageNumbers.map((num) => (
+              <button
+                key={num}
+                onClick={() => setCurrentPage(num)}
+                className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all cursor-pointer ${
+                  currentPage === num
+                    ? "bg-[#003d29] text-white"
+                    : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                }`}
               >
-                <ProductCard data={item} />
-              </div>
-            ))
-          ) : (
-            <p className="col-span-full text-center text-red-400">No products found</p>
-          )}
-        </div>
-      </div>
-    </>
+                {num}
+              </button>
+            ))}
+            {currentPage < totalPages && (
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                className="w-9 h-9 border border-gray-300 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-all cursor-pointer"
+              >
+                <ChevronRight size={16} />
+              </button>
+            )}
+          </div>
+        )}
+      </main>
+
+      {/* Universal Footer */}
+      <Footer />
+    </div>
   );
 }
 

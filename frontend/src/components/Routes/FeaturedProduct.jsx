@@ -37,10 +37,10 @@ function FeaturedProduct() {
 
   const featuredProducts = products?.filter((item) =>
     item.featuredProducts && (currentUser ? item.seller !== currentUser._id : true)
-  ).slice(0, 12);
+  ).slice(0, 8);
   const hasExcess = products?.filter((item) =>
     item.featuredProducts && (currentUser ? item.seller !== currentUser._id : true)
-  ).length > 12;
+  ).length > 8;
 
   const handleOnClick = (e) => {
     if (!currentUser) {

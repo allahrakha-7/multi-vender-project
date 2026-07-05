@@ -28,6 +28,7 @@ function CreateProduct() {
   const { currentUser } = useSelector((state) => state.user);
   const { products, loading, error } = useSelector((state) => state.product);
   const dispatch = useDispatch();
+  const [editingProductId, setEditingProductId] = useState(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -115,6 +116,25 @@ function CreateProduct() {
     }));
   };
 
+  const handleEditClick = (product) => {
+    setEditingProductId(product._id);
+    setFormData({
+      name: product.name || "",
+      description: product.description || "",
+      category: product.category || "",
+      tags: product.tags?.join(", ") || "",
+      originalPrice: product.originalPrice || "",
+      discountPrice: product.discountPrice || "",
+      stock: product.stock || "",
+      images: product.images || [],
+      shop: product.shop || "",
+      userRef: product.userRef || currentUser?._id || "",
+      bestDeals: product.bestDeals || false,
+      featuredProducts: product.featuredProducts || false,
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (currentUser.role !== 'seller') {
@@ -131,16 +151,36 @@ function CreateProduct() {
       const userRef = currentUser._id;
       const shopId = currentUser._id;
       const shop = formData.shop;
-      const res = await fetch("/api/products/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ ...formData, userRef, shopId, shop }),
-      });
+      const payload = { ...formData, userRef, shopId, shop };
+
+      let res;
+      if (editingProductId) {
+        res = await fetch(`/api/products/update/${editingProductId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(payload),
+        });
+      } else {
+        res = await fetch("/api/products/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(payload),
+        });
+      }
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to create product");
-      dispatch(createProductSuccess(data));
-      toast.success("Product created successfully!");
+      if (!res.ok) throw new Error(data.message || "Failed to process product");
+      
+      if (editingProductId) {
+        toast.success("Product updated successfully!");
+        setEditingProductId(null);
+      } else {
+        dispatch(createProductSuccess(data));
+        toast.success("Product created successfully!");
+      }
+
       setFormData({
         name: "",
         description: "",
@@ -155,6 +195,7 @@ function CreateProduct() {
         bestDeals: false,
         featuredProducts: false,
       });
+
       const fetchRes = await fetch(`/api/products/get/${currentUser._id}`, {
         method: "GET",
         credentials: "include",
@@ -163,7 +204,7 @@ function CreateProduct() {
       if (fetchRes.ok) dispatch(fetchProductsSuccess(fetchData.filter(product => product.userRef === currentUser._id)));
     } catch (error) {
       dispatch(createProductFailure(error.message));
-      toast.error(error.message || "Error creating product.");
+      toast.error(error.message || "Error processing product.");
     } finally {
       setUploading(false);
     }
@@ -227,7 +268,7 @@ const getStarRating = (rating) => {
             className="bg-white w-full p-4 sm:p-6 md:p-8 rounded-xl shadow-lg space-y-4 sm:space-y-5"
           >
             <h2 className="text-2xl sm:text-3xl md:text-3xl font-bold text-green-600 flex items-center gap-2">
-              <FaPlus /> Create Product
+              <FaPlus /> {editingProductId ? "Edit Product" : "Create Product"}
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -396,13 +437,40 @@ const getStarRating = (rating) => {
                 Featured Products
               </label>
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-green-600 text-white font-semibold py-2 sm:py-3 md:py-4 px-4 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-1 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed transition-colors"
-            >
-              Create Product
-            </button>
+            <div className="flex flex-col gap-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-green-600 text-white font-semibold py-2 sm:py-3 md:py-4 px-4 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-1 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed transition-colors"
+              >
+                {editingProductId ? "Save Changes" : "Create Product"}
+              </button>
+              {editingProductId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingProductId(null);
+                    setFormData({
+                      name: "",
+                      description: "",
+                      category: "",
+                      tags: "",
+                      originalPrice: "",
+                      discountPrice: "",
+                      stock: "",
+                      images: [],
+                      shop: "",
+                      userRef: currentUser?._id || "",
+                      bestDeals: false,
+                      featuredProducts: false,
+                    });
+                  }}
+                  className="w-full bg-gray-500 text-white font-semibold py-2 sm:py-3 md:py-4 px-4 rounded-lg hover:bg-gray-600 focus:outline-none transition-colors"
+                >
+                  Cancel Edit
+                </button>
+              )}
+            </div>
           </form>
           <div className="flex items-center justify-between m-3">
             <h2 className="text-[27px] text-gray-800 md:text-[32px] font-[700] font-Roboto relative">
@@ -499,14 +567,22 @@ const getStarRating = (rating) => {
                     </div>
                   )}
 
-                  <button
-                    className="w-full mt-2 text-sm sm:text-base md:text-lg bg-green-600 text-white sm:py-3 py-2 md:py-2 px-2 rounded-md hover:bg-green-700 transition"
-                    onClick={() => {
-                      navigate(`/product/${product._id}`, { state: { product } });
-                    }}
-                  >
-                    View Details
-                  </button>
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      className="flex-1 text-sm bg-green-600 text-white py-2 rounded-md hover:bg-green-700 transition"
+                      onClick={() => {
+                        navigate(`/product/${product._id}`, { state: { product } });
+                      }}
+                    >
+                      View Details
+                    </button>
+                    <button
+                      className="flex-1 text-sm bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
+                      onClick={() => handleEditClick(product)}
+                    >
+                      Edit Product
+                    </button>
+                  </div>
                 </div>
               ))
             ) : (

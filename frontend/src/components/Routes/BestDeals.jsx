@@ -20,7 +20,7 @@ function BestDeals() {
         const res = await fetch('/api/products/all');
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || "Failed to fetch products");
-        
+
         dispatch(fetchOtherUsersProductsSuccess(data));
       } catch (error) {
         dispatch(fetchOtherUsersProductsFailure(error.message));
@@ -30,10 +30,10 @@ function BestDeals() {
     fetchProducts();
   }, [dispatch]);
 
-  const bestDealsProducts = products?.filter((item) => 
+  const bestDealsProducts = products?.filter((item) =>
     item.bestDeals && (!currentUser || item.seller !== currentUser._id)
   ).slice(0, 12);
-  const hasExcess = products?.filter((item) => 
+  const hasExcess = products?.filter((item) =>
     item.bestDeals && (!currentUser || item.seller !== currentUser._id)
   ).length > 12;
 

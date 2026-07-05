@@ -83,8 +83,14 @@ export const getAllProducts = async (req, res, next) => {
 
 export const deleteProductCard = async (req, res, next) => {
   try {
-    const product = await Product.findByIdAndDelete(req.params.id);
+    const product = await Product.findById(req.params.id);
     if (!product) return next(errorHandler(404, "Product not found!"));
+
+    if (req.user.id !== product.userRef.toString()) {
+      return next(errorHandler(403, "You can only delete your own products!"));
+    }
+
+    await Product.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: "Your product deleted successfully!" });
   } catch (error) {
     next(errorHandler(500, error.message));
@@ -92,17 +98,17 @@ export const deleteProductCard = async (req, res, next) => {
 };
 
 export const updateProductCard = async (req, res, next) => {
-  const productCard = await Product.findById(req.params.id);
-
-  if (!productCard) {
-    return next(errorHandler(404, "Product not found!"));
-  }
-
-  if (req.user.id !== productCard.userRef) {
-    return next(errorHandler(401, "You can only update your own products!"));
-  }
-
   try {
+    const productCard = await Product.findById(req.params.id);
+
+    if (!productCard) {
+      return next(errorHandler(404, "Product not found!"));
+    }
+
+    if (req.user.id !== productCard.userRef.toString()) {
+      return next(errorHandler(401, "You can only update your own products!"));
+    }
+
     const updatedProductCard = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.status(200).json(updatedProductCard);
   } catch (error) {

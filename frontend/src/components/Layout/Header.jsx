@@ -7,7 +7,10 @@ import {
   ChevronDown,
   Menu,
   X,
-  Phone
+  Phone,
+  LayoutDashboard,
+  LogOut,
+  ShoppingBag
 } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { toast } from "react-toastify";
@@ -15,6 +18,9 @@ import {
   signOutUserStart,
   signOutUserFailure,
   signOutUserSuccess,
+  updateUserStart,
+  updateUserSuccess,
+  updateUserFailure,
 } from "../../redux/reducers/userSlice.js";
 
 // Inline SVG Logo for Shopcart (shopping cart with green frame/wheels, orange carrot, green leaves)
@@ -119,6 +125,65 @@ function Header() {
       dispatch(signOutUserFailure(error.message));
       toast.error(error.message || "Something went wrong!");
     }
+  };
+
+  const handleSwitchRole = async (newRole) => {
+    try {
+      dispatch(updateUserStart());
+      const res = await fetch(`/api/user/update/${currentUser._id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          ...currentUser,
+          role: newRole,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.success === false) {
+        dispatch(updateUserFailure(data.message || "Failed to switch role"));
+        toast.error(data.message || "Failed to switch role");
+        return;
+      }
+      dispatch(updateUserSuccess(data));
+      toast.success(`Switched to ${newRole === "seller" ? "Seller" : "Customer"} account successfully!`);
+      if (newRole === "seller") {
+        navigate("/seller-dashboard");
+      } else {
+        navigate("/");
+      }
+    } catch (error) {
+      dispatch(updateUserFailure(error.message));
+      toast.error(error.message || "Something went wrong!");
+    }
+  };
+
+  const renderAvatar = (user, sizeClass = "w-9 h-9 text-sm") => {
+    if (user?.avatar && user.avatar !== "" && user.avatar !== "https://www.pngall.com/wp-content/uploads/12/Avatar-Profile-Vector-PNG-Pic.png") {
+      return (
+        <img
+          src={user.avatar}
+          alt="profile"
+          className={`${sizeClass.split(" ")[0]} ${sizeClass.split(" ")[1]} rounded-full object-cover border border-gray-200`}
+        />
+      );
+    }
+    
+    const firstChar = user?.username ? user.username.charAt(0).toUpperCase() : "?";
+    const colors = [
+      "bg-red-500", "bg-blue-500", "bg-green-600", "bg-yellow-500", 
+      "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-teal-500"
+    ];
+    const charCode = firstChar.charCodeAt(0) || 0;
+    const colorClass = colors[charCode % colors.length];
+    
+    return (
+      <div className={`${sizeClass} rounded-full ${colorClass} text-white flex items-center justify-center font-bold uppercase border border-white shadow-sm select-none`}>
+        {firstChar}
+      </div>
+    );
   };
 
   const handleCategorySelect = (category) => {
@@ -270,38 +335,92 @@ function Header() {
                       onClick={() => setProfileOptions((prev) => !prev)}
                       className="flex items-center gap-2 cursor-pointer text-gray-700 hover:text-green-600 transition font-normal text-sm lg:text-base py-2"
                     >
-                      <img
-                        src={currentUser.avatar}
-                        alt="profile"
-                        className="w-6 h-6 rounded-full object-cover border border-gray-200"
-                      />
+                      {renderAvatar(currentUser, "w-6 h-6 text-[10px]")}
                       <span className="hidden sm:inline">Account</span>
+                      <ChevronDown
+                        size={14}
+                        className={`transition-transform duration-200 ${profileOptions ? "rotate-180" : ""}`}
+                      />
                     </div>
                     {profileOptions && (
-                      <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-50 py-1 font-semibold">
-                        <Link
-                          to="/seller-dashboard"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
-                          onClick={() => setProfileOptions(false)}
-                        >
-                          Switch to Seller
-                        </Link>
-                        <Link
-                          to="/profile"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
-                          onClick={() => setProfileOptions(false)}
-                        >
-                          Edit Profile
-                        </Link>
-                        <button
-                          onClick={() => {
-                            handleSignOut();
-                            setProfileOptions(false);
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 transition cursor-pointer"
-                        >
-                          Sign Out
-                        </button>
+                      <div className="absolute right-0 mt-2 w-60 bg-white border border-gray-150 rounded-xl shadow-xl z-50 py-2 divide-y divide-gray-100 transition duration-200">
+                        {/* Profile Summary Card */}
+                        <div className="px-4 py-2.5 flex items-center gap-3">
+                          {renderAvatar(currentUser, "w-9 h-9 text-xs")}
+                          <div className="overflow-hidden">
+                            <p className="text-xs font-bold text-gray-800 truncate">{currentUser.username}</p>
+                            <p className="text-[11px] text-gray-500 truncate font-normal">{currentUser.email}</p>
+                          </div>
+                        </div>
+
+                        {/* Quick Links */}
+                        <div className="py-1">
+                          {currentUser.role === "seller" ? (
+                            <>
+                              <Link
+                                to="/seller-dashboard"
+                                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition font-normal"
+                                onClick={() => setProfileOptions(false)}
+                              >
+                                <LayoutDashboard size={15} className="text-gray-500" />
+                                <span>Seller Dashboard</span>
+                              </Link>
+                              <Link
+                                to="/seller-orders"
+                                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition font-normal"
+                                onClick={() => setProfileOptions(false)}
+                              >
+                                <ShoppingBag size={15} className="text-gray-500" />
+                                <span>Seller Orders</span>
+                              </Link>
+                              <button
+                                onClick={() => {
+                                  handleSwitchRole("user");
+                                  setProfileOptions(false);
+                                }}
+                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition font-normal text-left cursor-pointer"
+                              >
+                                <User size={15} className="text-gray-500" />
+                                <span>Switch to Customer</span>
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => {
+                                  handleSwitchRole("seller");
+                                  setProfileOptions(false);
+                                }}
+                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition font-normal text-left cursor-pointer"
+                              >
+                                <LayoutDashboard size={15} className="text-gray-500" />
+                                <span>Become a Seller</span>
+                              </button>
+                            </>
+                          )}
+                          <Link
+                            to="/profile"
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition font-normal"
+                            onClick={() => setProfileOptions(false)}
+                          >
+                            <User size={15} className="text-gray-500" />
+                            <span>Edit Profile</span>
+                          </Link>
+                        </div>
+
+                        {/* Sign Out */}
+                        <div className="py-1">
+                          <button
+                            onClick={() => {
+                              handleSignOut();
+                              setProfileOptions(false);
+                            }}
+                            className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition cursor-pointer font-normal"
+                          >
+                            <LogOut size={15} className="text-red-500" />
+                            <span>Sign Out</span>
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -339,75 +458,164 @@ function Header() {
       {/* Mobile Drawer Menu */}
       {mobileOpen && (
         <div className="fixed inset-0 z-[60] bg-black/40 md:hidden">
-          <div className="fixed top-0 left-0 h-full w-[85%] max-w-xs bg-white shadow-2xl p-5 overflow-y-auto">
-            {/* Header of Drawer */}
-            <div className="flex items-center justify-between mb-6">
-              <Link to="/" onClick={() => setMobileOpen(false)}>
-                <Logo size="30" />
-              </Link>
-              <button
-                className="p-2 rounded-md hover:bg-gray-100 text-gray-700"
-                onClick={() => setMobileOpen(false)}
-              >
-                <X size={22} />
-              </button>
+          <div className="fixed top-0 left-0 h-full w-[85%] max-w-xs bg-white shadow-2xl p-5 flex flex-col z-50 justify-between">
+            <div>
+              {/* Header of Drawer */}
+              <div className="flex items-center justify-between mb-6">
+                <Link to="/" onClick={() => setMobileOpen(false)}>
+                  <Logo size="30" />
+                </Link>
+                <button
+                  className="p-2 rounded-md hover:bg-gray-100 text-gray-700"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <X size={22} />
+                </button>
+              </div>
+
+              {/* Mobile Search */}
+              <form onSubmit={handleSearchSubmit} className="relative flex items-center mb-6">
+                <input
+                  type="text"
+                  placeholder="Search Product..."
+                  className="bg-[#f5f6f8] hover:bg-[#ebecf0] focus:bg-white focus:outline-none flex-1 px-4 py-2 text-sm rounded-full border border-transparent focus:border-gray-300 text-gray-800 placeholder-gray-500 transition duration-200"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <button
+                  type="submit"
+                  className="absolute right-3.5 text-gray-505 hover:text-green-600 transition"
+                >
+                  <Search size={14} />
+                </button>
+              </form>
+
+              {/* Drawer Links */}
+              <nav className="space-y-3">
+                <Link
+                  to="/"
+                  className="block py-2 text-gray-800 font-normal border-b border-gray-50 hover:text-green-600 transition"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Home
+                </Link>
+
+                {/* Categories Collapse */}
+                <div className="border-b border-gray-50 pb-2">
+                  <button
+                    type="button"
+                    className="w-full flex items-center justify-between py-2 text-gray-800 font-medium hover:text-green-600 transition"
+                    onClick={() => setMobileCategoriesOpen((p) => !p)}
+                  >
+                    <span>Categories</span>
+                    <ChevronDown
+                      className={`transition-transform duration-200 ${mobileCategoriesOpen ? "rotate-180" : ""}`}
+                      size={14}
+                    />
+                  </button>
+                  {mobileCategoriesOpen && (
+                    <ul className="pl-3 py-1 space-y-1 bg-gray-50 rounded-md mt-1 max-h-48 overflow-y-auto">
+                      {categories.map((category, idx) => (
+                        <li
+                          key={idx}
+                          className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 hover:text-green-600 cursor-pointer rounded transition"
+                          onClick={() => handleCategorySelect(category)}
+                        >
+                          {category}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </nav>
             </div>
 
-            {/* Mobile Search */}
-            <form onSubmit={handleSearchSubmit} className="relative flex items-center mb-6">
-              <input
-                type="text"
-                placeholder="Search Product..."
-                className="bg-[#f5f6f8] hover:bg-[#ebecf0] focus:bg-white focus:outline-none flex-1 px-4 py-2 text-sm rounded-full border border-transparent focus:border-gray-300 text-gray-800 placeholder-gray-500 transition duration-200"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <button
-                type="submit"
-                className="absolute right-3.5 text-gray-500 hover:text-green-600 transition"
-              >
-                <Search size={14} />
-              </button>
-            </form>
-
-            {/* Drawer Links */}
-            <nav className="space-y-3">
-              <Link
-                to="/"
-                className="block py-2 text-gray-800 font-normal border-b border-gray-50 hover:text-green-600 transition"
-                onClick={() => setMobileOpen(false)}
-              >
-                Home
-              </Link>
-
-              {/* Categories Collapse */}
-              <div className="border-b border-gray-50 pb-2">
-                <button
-                  type="button"
-                  className="w-full flex items-center justify-between py-2 text-gray-800 font-medium hover:text-green-600 transition"
-                  onClick={() => setMobileCategoriesOpen((p) => !p)}
-                >
-                  <span>Categories</span>
-                  <ChevronDown
-                    className={`transition-transform duration-200 ${mobileCategoriesOpen ? "rotate-180" : ""}`}
-                    size={14}
-                  />
-                </button>
-                {mobileCategoriesOpen && (
-                  <ul className="pl-3 py-1 space-y-1 bg-gray-50 rounded-md mt-1 max-h-48 overflow-y-auto">
-                    {categories.map((category, idx) => (
-                      <li
-                        key={idx}
-                        className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 hover:text-green-600 cursor-pointer rounded transition"
-                        onClick={() => handleCategorySelect(category)}
+            {/* Mobile Drawer Account Section */}
+            <div className="border-t border-gray-100 pt-6 mt-6">
+              {currentUser ? (
+                <div>
+                  <div className="flex items-center gap-3 mb-4 px-2">
+                    {renderAvatar(currentUser, "w-10 h-10 text-sm")}
+                    <div className="overflow-hidden">
+                      <p className="text-sm font-bold text-gray-800 truncate">{currentUser.username}</p>
+                      <p className="text-xs text-gray-500 truncate font-normal">{currentUser.email}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    {currentUser.role === "seller" ? (
+                      <>
+                        <Link
+                          to="/seller-dashboard"
+                          className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition font-medium"
+                          onClick={() => setMobileOpen(false)}
+                        >
+                          <LayoutDashboard size={16} className="text-gray-500" />
+                          <span>Seller Dashboard</span>
+                        </Link>
+                        <Link
+                          to="/seller-orders"
+                          className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition font-medium"
+                          onClick={() => setMobileOpen(false)}
+                        >
+                          <ShoppingBag size={16} className="text-gray-500" />
+                          <span>Seller Orders</span>
+                        </Link>
+                        <button
+                          onClick={() => {
+                            handleSwitchRole("user");
+                            setMobileOpen(false);
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition font-medium text-left cursor-pointer"
+                        >
+                          <User size={16} className="text-gray-500" />
+                          <span>Switch to Customer</span>
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          handleSwitchRole("seller");
+                          setMobileOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition font-medium text-left cursor-pointer"
                       >
-                        {category}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </nav>
+                        <LayoutDashboard size={16} className="text-gray-500" />
+                        <span>Become a Seller</span>
+                      </button>
+                    )}
+                    <Link
+                      to="/profile"
+                      className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition font-medium"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      <User size={16} className="text-gray-500" />
+                      <span>Edit Profile</span>
+                    </Link>
+                    <button
+                      onClick={() => {
+                        handleSignOut();
+                        setMobileOpen(false);
+                      }}
+                      className="flex items-center gap-2.5 w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition font-medium cursor-pointer"
+                    >
+                      <LogOut size={16} className="text-red-500" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="px-2 pb-2">
+                  <Link
+                    to="/sign-in"
+                    className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-[#003d29] text-white text-sm font-medium rounded-full hover:bg-[#002e1f] transition"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <User size={16} />
+                    <span>Sign In / Register</span>
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

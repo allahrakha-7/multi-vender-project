@@ -1,13 +1,14 @@
 import express from "express";
-import { createProduct, deleteProductCard, getProduct, getProductDetails, getAllProducts,} from "../controllers/products.controller.js";
+import { createProduct, deleteProductCard, getProduct, getProductDetails, getAllProducts, updateProductCard } from "../controllers/products.controller.js";
 import verifyToken from "../utils/verifyToken.js";
 
 const router = express.Router();
 
 router.post("/create", verifyToken, createProduct);
-router.get("/get/:id", verifyToken, getProduct);
-router.get("/details/:id", verifyToken, getProductDetails);
-router.get("/all", verifyToken, getAllProducts);
+router.get("/get/:id", getProduct);
+router.get("/details/:id", getProductDetails);
+router.get("/all", getAllProducts);
 router.delete("/delete/:id", verifyToken, deleteProductCard);
+router.post("/update/:id", verifyToken, updateProductCard);
 
 export default router;
