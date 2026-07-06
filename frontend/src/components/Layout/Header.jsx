@@ -294,12 +294,12 @@ function Header() {
                 </Link>
 
                 {/* What's New */}
-                <Link to="/products" className="hover:text-green-600 transition font-normal">
+                <Link to="/products?sort=newest" className="hover:text-green-600 transition font-normal">
                   What's New
                 </Link>
 
                 {/* Delivery */}
-                <Link to="/products" className="hover:text-green-600 transition font-normal">
+                <Link to="/shipping" className="hover:text-green-600 transition font-normal">
                   Delivery
                 </Link>
               </nav>
@@ -527,6 +527,30 @@ function Header() {
                     </ul>
                   )}
                 </div>
+
+                <Link
+                  to="/products"
+                  className="block py-2 text-gray-800 font-normal border-b border-gray-50 hover:text-green-600 transition"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Deals
+                </Link>
+
+                <Link
+                  to="/products?sort=newest"
+                  className="block py-2 text-gray-800 font-normal border-b border-gray-50 hover:text-green-600 transition"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  What's New
+                </Link>
+
+                <Link
+                  to="/shipping"
+                  className="block py-2 text-gray-800 font-normal border-b border-gray-50 hover:text-green-600 transition"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Delivery
+                </Link>
               </nav>
             </div>
 

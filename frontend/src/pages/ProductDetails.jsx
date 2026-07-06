@@ -5,7 +5,7 @@ import { addToCart, removeFromCart } from "../redux/reducers/cartSlice.js";
 import { toast } from "react-toastify";
 import Header from "../components/Layout/Header";
 import Footer from "../components/Layout/Footer";
-import ProductCard from "../components/ProductCard";
+import { getProductImage } from "../utils/productImages";
 
 // Helper function to return relevant mock specifications based on product category
 const getProductSpecs = (product) => {
@@ -17,7 +17,7 @@ const getProductSpecs = (product) => {
       general: [
         { label: "Brand", value: product.brand || "Apple" },
         { label: "Model", value: product.name || "AirPods Max Wireless Headphones" },
-        { label: "Price", value: `$${product.discountPrice || product.originalPrice || 0}.00` },
+        { label: "Price", value: `Rs. ${Number(product.discountPrice || product.originalPrice || 0).toLocaleString()}` },
         { label: "Release date", value: "December 2020" },
         { label: "Model Number", value: "AirPods Max" },
         { label: "Headphone Type", value: "Over-Ear" },
@@ -40,7 +40,7 @@ const getProductSpecs = (product) => {
       general: [
         { label: "Author", value: "Morgan Housel" },
         { label: "Publisher", value: "Harriman House" },
-        { label: "Price", value: `$${product.discountPrice || product.originalPrice || 0}.00` },
+        { label: "Price", value: `Rs. ${Number(product.discountPrice || product.originalPrice || 0).toLocaleString()}` },
         { label: "Publication date", value: "September 2020" },
         { label: "ISBN-10", value: "0857197681" },
         { label: "Language", value: "English" },
@@ -63,7 +63,7 @@ const getProductSpecs = (product) => {
       general: [
         { label: "Brand", value: "SleekWood" },
         { label: "Type", value: product.name || "Ergonomic Lounge Chair" },
-        { label: "Price", value: `$${product.discountPrice || product.originalPrice || 0}.00` },
+        { label: "Price", value: `Rs. ${Number(product.discountPrice || product.originalPrice || 0).toLocaleString()}` },
         { label: "Color", value: "Oak / Charcoal" },
         { label: "Assembly Required", value: "Yes (Tools included)" },
         { label: "Frame Material", value: "Solid Oak Wood" },
@@ -86,7 +86,7 @@ const getProductSpecs = (product) => {
     general: [
       { label: "Brand", value: product.brand || "Shopcart Brand" },
       { label: "Model", value: product.name || "Premium Quality Item" },
-      { label: "Price", value: `$${product.discountPrice || product.originalPrice || 0}.00` },
+      { label: "Price", value: `Rs. ${Number(product.discountPrice || product.originalPrice || 0).toLocaleString()}` },
       { label: "Category", value: product.category || "General" },
       { label: "Condition", value: "New" },
       { label: "Availability", value: product.stock > 0 ? "In Stock" : "Out of Stock" },
@@ -123,6 +123,8 @@ function ProductDetails() {
   const { cart } = useSelector((state) => state.cart);
   const isInCart = product ? cart.some((item) => item._id === product._id) : false;
 
+  const displayImages = product ? [getProductImage(product)] : [];
+
   useEffect(() => {
     window.scrollTo(0, 0);
     const fetchProduct = async () => {
@@ -135,6 +137,7 @@ function ProductDetails() {
         if (!res.ok) throw new Error("Failed to fetch product");
         setProduct(data);
       } catch (err) {
+        console.error("Error fetching product details:", err);
         setError("Failed to fetch product details");
       } finally {
         setLoading(false);
@@ -248,16 +251,16 @@ function ProductDetails() {
             {/* Main Preview */}
             <div className="w-full bg-[#f5f6f6] rounded-3xl p-6 sm:p-12 flex items-center justify-center h-[340px] sm:h-[480px]">
               <img
-                src={product.images && product.images[selectedImageIndex] ? product.images[selectedImageIndex] : "https://via.placeholder.com/400"}
+                src={displayImages && displayImages[selectedImageIndex] ? displayImages[selectedImageIndex] : "https://via.placeholder.com/400"}
                 alt={product.name}
                 className="max-h-full max-w-full object-contain mix-blend-multiply"
               />
             </div>
 
             {/* Thumbnail Selectors */}
-            {product.images && product.images.length > 1 && (
+            {displayImages && displayImages.length > 1 && (
               <div className="flex flex-wrap gap-4 mt-6">
-                {product.images.map((img, i) => (
+                {displayImages.map((img, i) => (
                   <button
                     key={i}
                     onClick={() => setSelectedImageIndex(i)}
@@ -297,7 +300,7 @@ function ProductDetails() {
             {/* Price section */}
             <div className="mt-6 border-t border-gray-100 pt-6">
               <div className="text-2xl sm:text-3xl font-extrabold text-gray-900">
-                ${product.discountPrice || product.originalPrice || 0}.00 or ${( (product.discountPrice || product.originalPrice || 0) / 6 ).toFixed(2)}/month
+                Rs. {Number(product.discountPrice || product.originalPrice || 0).toLocaleString()} or Rs. {Math.round((product.discountPrice || product.originalPrice || 0) / 6).toLocaleString()}/month
               </div>
               <div className="text-xs text-gray-400 mt-1.5">
                 Suggested payments with 6 months special financing

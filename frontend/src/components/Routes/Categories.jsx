@@ -7,7 +7,7 @@ function Categories() {
     {
       id: 1,
       title: "Free Shipping",
-      Description: "From all orders over 100$",
+      Description: "From all orders over Rs. 10,000",
       icon: (
         <svg
           width="36"
@@ -212,10 +212,11 @@ function Categories() {
           Shop Our Top Categories
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
-          {categoryData.map((category) => (
+          {categoryData.map((category, idx) => (
             <div
               key={category.id}
-              className="group relative overflow-hidden rounded-2xl h-52 sm:h-60 flex flex-col items-center justify-start pt-6 cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-300"
+              style={{ animationDelay: `${idx * 100}ms` }}
+              className="group relative overflow-hidden rounded-2xl h-52 sm:h-60 flex flex-col items-center justify-start pt-6 cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-300 animate-zoom-in"
               onClick={() => handleCategorySelect(category.title)}
             >
               {/* Image as background */}
@@ -239,11 +240,11 @@ function Categories() {
       {/* Branding bar (hidden on mobile) */}
       <div className="w-full max-w-7xl mx-auto hidden sm:block px-4 lg:px-8 mb-8 sm:mb-12">
         <div
-          className="flex flex-wrap items-center justify-between gap-6 w-full bg-white p-6 rounded-xl border border-gray-100/80 shadow-sm"
+          className="flex flex-wrap items-center justify-between gap-6 w-full bg-white p-6 rounded-xl border border-gray-100/80 shadow-sm animate-slide-up animation-delay-200"
         >
           {brandingData &&
             brandingData.map((i, index) => (
-              <div className="flex items-center gap-4" key={index}>
+              <div className="flex items-center gap-4 animate-zoom-in" style={{ animationDelay: `${300 + index * 100}ms` }} key={index}>
                 <div className="shrink-0">
                   {i.icon}
                 </div>

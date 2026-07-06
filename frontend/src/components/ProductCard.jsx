@@ -5,12 +5,15 @@ import { useDispatch, useSelector } from "react-redux";
 import { addToCart, removeFromCart } from "../redux/reducers/cartSlice";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { getProductImage } from "../utils/productImages";
 
 function ProductCard({ data }) {
   const { currentUser } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const { cart } = useSelector((state) => state.cart);
   const navigate = useNavigate();
+
+  const displayImage = getProductImage(data);
 
   const isInCart = cart.some((item) => item._id === data._id);
 
@@ -42,14 +45,14 @@ function ProductCard({ data }) {
     }
   };
 
-  // Format price as $XX.YY with superscript cents matching the screenshot exactly
+  // Format price as Rs. XX.YY with superscript cents matching the screenshot exactly
   const renderPrice = (price) => {
     const num = Number(price) || 0;
     const formatted = num.toFixed(2);
     const [dollars, cents] = formatted.split(".");
     return (
       <span className="font-bold text-gray-900 text-sm sm:text-base">
-        ${dollars}
+        Rs. {Number(dollars).toLocaleString()}
         <span className="text-[10px] sm:text-xs align-super font-bold">.{cents}</span>
       </span>
     );
@@ -61,7 +64,7 @@ function ProductCard({ data }) {
         {/* Rounded gray background for the image */}
         <div className="relative bg-[#f5f6f6] rounded-3xl p-6 flex items-center justify-center h-48 sm:h-52 overflow-hidden">
           <img
-            src={data.images && data.images[0]}
+            src={displayImage}
             alt={data.name}
             className="max-h-full max-w-full object-contain transition-transform duration-500 group-hover:scale-105"
           />

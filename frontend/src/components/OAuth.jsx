@@ -58,13 +58,13 @@ function OAuth() {
 
     return (
         <>
-            <button 
-                onClick={handleGoogleClick} 
+            <button
+                onClick={handleGoogleClick}
                 disabled={loading}
-                type="button" 
+                type="button"
                 className="bg-green-600 text-lg cursor-pointer text-white flex items-center justify-center gap-2 p-3 rounded-lg uppercase hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
-                {loading ? "Signing in..." : "Continue with Google"} 
+                {loading ? "Signing in..." : "Continue with Google"}
                 {!loading && <FaGoogle className='text-xl' />}
             </button>
         </>

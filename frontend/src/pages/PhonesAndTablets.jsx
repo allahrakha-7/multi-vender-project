@@ -123,9 +123,9 @@ const PhoneAndTablets = () => {
                 className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00bf63]"
               >
                 <option value="">All Prices</option>
-                <option value="0-500">Under $500</option>
-                <option value="500-1000">$500 - $1000</option>
-                <option value="1000-2000">$1000 - $2000</option>
+                <option value="0-50000">Under Rs. 50,000</option>
+                <option value="50000-100000">Rs. 50,000 - Rs. 100,000</option>
+                <option value="100000-250000">Rs. 100,000 - Rs. 250,000</option>
               </select>
             </div>
           </div>
@@ -149,7 +149,7 @@ const PhoneAndTablets = () => {
                   />
                   <h3 className="text-lg font-medium text-gray-900">{product.name}</h3>
                   <p className="text-gray-600 mt-2">
-                    ${product.discountPrice} <span className="line-through text-gray-400">${product.originalPrice}</span>
+                    Rs. {Number(product.discountPrice).toLocaleString()} <span className="line-through text-gray-400">Rs. {Number(product.originalPrice).toLocaleString()}</span>
                   </p>
                   <Link
                     to={`/product/${product._id}`}

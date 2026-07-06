@@ -54,7 +54,13 @@ function BestDeals() {
             <p className="col-span-full text-center text-gray-400 py-10">Loading products...</p>
           ) : bestDealsProducts && bestDealsProducts.length > 0 ? (
             bestDealsProducts.map((item, idx) => (
-              <ProductCard key={idx} data={item} />
+              <div
+                key={idx}
+                className="animate-slide-up"
+                style={{ animationDelay: `${idx * 80}ms` }}
+              >
+                <ProductCard data={item} isDealsOrFeatured={true} />
+              </div>
             ))
           ) : (
             <p className="col-span-full text-center text-gray-400 py-10">No products found</p>

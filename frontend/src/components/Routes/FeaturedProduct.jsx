@@ -35,11 +35,22 @@ function FeaturedProduct() {
     fetchProducts();
   }, [dispatch]);
 
+  const bestDealsList = products?.filter((item) =>
+    item.bestDeals && (!currentUser || item.seller !== currentUser._id)
+  ).slice(0, 12) || [];
+
+  const bestDealsIds = new Set(bestDealsList.map(item => item._id));
+
   const featuredProducts = products?.filter((item) =>
-    item.featuredProducts && (currentUser ? item.seller !== currentUser._id : true)
+    item.featuredProducts && 
+    (currentUser ? item.seller !== currentUser._id : true) &&
+    !bestDealsIds.has(item._id)
   ).slice(0, 8);
+
   const hasExcess = products?.filter((item) =>
-    item.featuredProducts && (currentUser ? item.seller !== currentUser._id : true)
+    item.featuredProducts && 
+    (currentUser ? item.seller !== currentUser._id : true) &&
+    !bestDealsIds.has(item._id)
   ).length > 8;
 
   const handleOnClick = (e) => {
@@ -64,7 +75,13 @@ function FeaturedProduct() {
             <p className="col-span-full text-center text-gray-400 py-10">Loading products...</p>
           ) : featuredProducts && featuredProducts.length > 0 ? (
             featuredProducts.map((item, idx) => (
-              <ProductCard key={idx} data={item} />
+              <div
+                key={idx}
+                className="animate-slide-up"
+                style={{ animationDelay: `${idx * 80}ms` }}
+              >
+                <ProductCard data={item} isDealsOrFeatured={true} />
+              </div>
             ))
           ) : (
             <p className="col-span-full text-center text-gray-400 py-10">No products found</p>

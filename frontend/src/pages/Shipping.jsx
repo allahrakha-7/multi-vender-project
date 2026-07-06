@@ -51,10 +51,10 @@ const Shipping = () => {
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">Shipping Costs</h2>
             <ul className="list-disc list-inside text-gray-600 space-y-2">
               <li>
-                <strong>Free Shipping:</strong> On orders above $50 within Pakistan
+                <strong>Free Shipping:</strong> On orders above Rs. 5,000 within Pakistan
               </li>
               <li>
-                <strong>Standard Shipping:</strong> $5 flat rate for orders below $50
+                <strong>Standard Shipping:</strong> Rs. 500 flat rate for orders below Rs. 5,000
               </li>
               <li>
                 <strong>International Shipping:</strong> Calculated at checkout based on weight and

@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import Header from "../components/Layout/Header";
 import Footer from "../components/Layout/Footer";
+import { getProductImage } from "../utils/productImages";
 
 function OrderDetails() {
   const navigate = useNavigate();
@@ -14,6 +15,8 @@ function OrderDetails() {
   // Read selected product passed from ProductDetails, otherwise fallback to first product
   const productFromState = location.state?.product;
   const product = productFromState || (Array.isArray(products) && products.length > 0 ? products[0] : null);
+
+  const displayImage = getProductImage(product);
 
   const [loading, setLoading] = useState(false);
   const [isReturning, setIsReturning] = useState(true);
@@ -163,7 +166,7 @@ function OrderDetails() {
                   {/* Image wrapper */}
                   <div className="w-28 h-28 bg-[#f5f6f6] rounded-2xl p-4 flex items-center justify-center shrink-0">
                     <img 
-                      src={product.images?.[0] || "/placeholder.jpg"} 
+                      src={displayImage} 
                       alt={product.name} 
                       className="max-h-full max-w-full object-contain mix-blend-multiply" 
                     />
@@ -181,7 +184,7 @@ function OrderDetails() {
 
                 <div className="sm:text-right flex sm:flex-col justify-between w-full sm:w-auto items-center sm:items-end">
                   <span className="font-extrabold text-lg text-gray-900">
-                    ${itemPrice.toFixed(2)}
+                    Rs. {Number(itemPrice).toLocaleString()}
                   </span>
                   <span className="text-xs text-gray-400 font-bold mt-1">
                     Quantity: {quantityCount.toString().padStart(2, "0")}
@@ -433,23 +436,23 @@ function OrderDetails() {
               <div className="border-t border-gray-100 pt-6 flex flex-col gap-3 text-sm font-semibold text-gray-700">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Sub Total</span>
-                  <span className="text-gray-900 font-extrabold">${subTotal.toFixed(2)}</span>
+                  <span className="text-gray-900 font-extrabold">Rs. {Number(subTotal).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Tax(10%)</span>
-                  <span className="text-gray-900 font-extrabold">${tax.toFixed(2)}</span>
+                  <span className="text-gray-900 font-extrabold">Rs. {Number(tax).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Coupon Discount</span>
-                  <span className="text-red-500">-${couponDiscount.toFixed(2)}</span>
+                  <span className="text-red-500">-Rs. {Number(couponDiscount).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Shipping Cost</span>
-                  <span className="text-gray-900 font-extrabold">-${shippingCost.toFixed(2)}</span>
+                  <span className="text-gray-900 font-extrabold">-Rs. {Number(shippingCost).toLocaleString()}</span>
                 </div>
                 <div className="border-t border-gray-100 pt-4 flex justify-between items-center text-lg text-gray-950 font-extrabold">
                   <span>Total</span>
-                  <span>=${finalTotal.toFixed(2)}</span>
+                  <span>=Rs. {Number(finalTotal).toLocaleString()}</span>
                 </div>
               </div>
 
@@ -460,7 +463,7 @@ function OrderDetails() {
                 disabled={loading}
                 className="w-full bg-[#003d29] hover:bg-[#002e1f] text-white font-bold py-4 rounded-full transition shadow-sm cursor-pointer text-center text-sm sm:text-base disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
-                {loading ? "Processing..." : `Pay $${finalTotal.toFixed(2)}`}
+                {loading ? "Processing..." : `Pay Rs. ${Number(finalTotal).toLocaleString()}`}
               </button>
 
             </div>
